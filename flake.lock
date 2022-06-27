@@ -1,0 +1,44 @@
+{
+  "nodes": {
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1656265786,
+        "narHash": "sha256-A9RkoGrxzsmMm0vily18p92Rasb+MbdDMaSnzmywXKw=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "cd90e773eae83ba7733d2377b6cdf84d45558780",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-22.05",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "nixpkgs": "nixpkgs",
+        "stargate-nixpkgs": "stargate-nixpkgs"
+      }
+    },
+    "stargate-nixpkgs": {
+      "locked": {
+        "lastModified": 1656362196,
+        "narHash": "sha256-86ZEX6CI536jfAaz5UcDXS6JzCgww8In3pn1fzT5JzE=",
+        "owner": "stargate01",
+        "repo": "nixpkgs",
+        "rev": "2c7830806174a433e166796c1a89a87fb4d9acf2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "stargate01",
+        "ref": "nrf-command-line-tools",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
