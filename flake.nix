@@ -7,7 +7,7 @@
   outputs = { self, nixpkgs2111, nixpkgs, stargate-nixpkgs }:
     let
       pkgs = import nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; };
-      pkgs2111 = import nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; };
+      pkgs2111 = import nixpkgs2111 { system = "x86_64-linux"; config.allowUnfree = true; };
       stargate-pkgs = import stargate-nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; };
     in
     {
