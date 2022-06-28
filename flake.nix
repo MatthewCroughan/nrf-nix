@@ -8,7 +8,7 @@
     let
       pkgs = import nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; };
       pkgs2111 = import nixpkgs2111 { system = "x86_64-linux"; config.allowUnfree = true; };
-      stargate-pkgs = import stargate-nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; };
+      stargate-pkgs = import stargate-nixpkgs { system = "x86_64-linux"; config = { allowUnfree = true; segger-jlink.acceptLicense = true; }; };
     in
     {
       devShell.x86_64-linux = pkgs.mkShell {
@@ -19,8 +19,8 @@
 
           # Minimal
           pkgs2111.nrfutil
-          (stargate-pkgs.segger-jlink.override { acceptLicense = true; })
-          (stargate-pkgs.nrf-command-line-tools.override { acceptLicense = true; })
+          stargate-pkgs.segger-jlink
+          stargate-pkgs.nrf-command-line-tools
         ];
       };
     };
