@@ -18,6 +18,7 @@
         buildInputs = [
           pkgs2003.git
           # Suggested
+          pkgs.cmake
           pkgs.gn
           pkgs.python310Packages.west
 
