@@ -1,4 +1,5 @@
 {
+  nixConfig.bash-prompt = "\\[\\033[1m\\][nrf-nix-devshell]\\[\\033\[m\\]\\040\\w$\\040";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-22.05";
     nixpkgs2111.url = "github:nixos/nixpkgs/nixos-21.11";
