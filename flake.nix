@@ -1,19 +1,22 @@
 {
   nixConfig.bash-prompt = "\\[\\033[1m\\][nrf-nix-devshell]\\[\\033\[m\\]\\040\\w$\\040";
   inputs = {
+    nixpkgs2003.url = "github:nixos/nixpkgs/nixos-20.03";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-22.05";
     nixpkgs2111.url = "github:nixos/nixpkgs/nixos-21.11";
     stargate-nixpkgs.url = "github:stargate01/nixpkgs/nrf-command-line-tools";
   };
-  outputs = { self, nixpkgs2111, nixpkgs, stargate-nixpkgs }:
+  outputs = { self, nixpkgs2111, nixpkgs2003, nixpkgs, stargate-nixpkgs }:
     let
       pkgs = import nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; };
       pkgs2111 = import nixpkgs2111 { system = "x86_64-linux"; config.allowUnfree = true; };
+      pkgs2003 = import nixpkgs2003 { system = "x86_64-linux"; config.allowUnfree = true; };
       stargate-pkgs = import stargate-nixpkgs { system = "x86_64-linux"; config = { allowUnfree = true; segger-jlink.acceptLicense = true; }; };
     in
     {
       devShell.x86_64-linux = pkgs.mkShell {
         buildInputs = [
+          pkgs2003.git
           # Suggested
           pkgs.gn
           pkgs.python310Packages.west
