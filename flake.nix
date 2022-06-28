@@ -20,7 +20,7 @@
           # Minimal
           pkgs2111.nrfutil
           (stargate-pkgs.segger-jlink.override { acceptLicense = true; })
-          stargate-pkgs.nrf-command-line-tools
+          (stargate-pkgs.nrf-command-line-tools.override { acceptLicense = true; })
         ];
       };
     };
