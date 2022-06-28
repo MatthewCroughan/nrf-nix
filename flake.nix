@@ -19,7 +19,7 @@
           pkgs2003.git
           # Suggested
           pkgs.gn
-          pkgs2111.python38Packages.west
+          pkgs.python39Packages.west
 
           # Minimal
           pkgs2111.nrfutil
