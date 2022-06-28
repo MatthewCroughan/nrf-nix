@@ -11,6 +11,11 @@
     {
       devShell.x86_64-linux = pkgs.mkShell {
         buildInputs = [
+          # Suggested
+          pkgs.gn
+          pkgs.python310Packages.west
+
+          # Minimal
           pkgs.nrfutil
           (stargate-pkgs.segger-jlink.override { acceptLicense = true; })
           stargate-pkgs.nrf-command-line-tools
