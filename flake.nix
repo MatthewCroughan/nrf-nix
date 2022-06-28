@@ -14,19 +14,46 @@
       stargate-pkgs = import stargate-nixpkgs { system = "x86_64-linux"; config = { allowUnfree = true; segger-jlink.acceptLicense = true; }; };
     in
     {
-      devShell.x86_64-linux = pkgs.mkShell {
-        buildInputs = [
-          pkgs2003.git
-          # Suggested
-          pkgs.cmake
-          pkgs.gn
-          pkgs.python310Packages.west
+      devShell.x86_64-linux =
+        let
+          zephyrPython = pkgs.python3.withPackages (p: with p; [
+            west
+            docutils
+            wheel
+            breathe
+            sphinx
+            sphinx_rtd_theme
+            pyyaml
+            ply
+            pyelftools
+            pyserial
+            pykwalify
+            colorama
+            pillow
+            intelhex
+            pytest
+            gcovr
+            tkinter
+            future
+            cryptography
+            setuptools
+            pyparsing
+            click
+            kconfiglib
+            pylink-square
+          ]);
+        in
+        pkgs.mkShell {
+          buildInputs = [
+            # Suggested
+            pkgs.cmake
+            pkgs.gn
 
-          # Minimal
-          pkgs2111.nrfutil
-          stargate-pkgs.segger-jlink
-          stargate-pkgs.nrf-command-line-tools
-        ];
-      };
+            # Minimal
+            pkgs2111.nrfutil
+            stargate-pkgs.segger-jlink
+            stargate-pkgs.nrf-command-line-tools
+          ];
+        };
     };
 }
