@@ -45,6 +45,9 @@
         in
         pkgs.mkShell {
           buildInputs = [
+            # Undocumented Deps
+            pkgs.file
+
             # Suggested
             pkgs.cmake
             pkgs.gn
