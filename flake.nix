@@ -23,7 +23,7 @@
             sha256 = "sha256-so2Ir0ZbZeJBo6J285fHC6jsGBzj808bC1i8uP10QPQ=";
           };
           myVscode = pkgs.vscode-with-extensions.override {
-            vscode = pkgs.vscodium;
+            vscode = pkgs.vscodium-fhs;
             vscodeExtensions = [ nrfConnectExtension ];
           };
         in pkgs.mkShell
