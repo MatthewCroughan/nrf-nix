@@ -58,16 +58,15 @@
     },
     "stargate-nixpkgs": {
       "locked": {
-        "lastModified": 1656362196,
-        "narHash": "sha256-86ZEX6CI536jfAaz5UcDXS6JzCgww8In3pn1fzT5JzE=",
-        "owner": "stargate01",
+        "lastModified": 1656628719,
+        "narHash": "sha256-Ot9XWRWjWJ2bh2Rm7P9llCmBaQVSDIQJ+F1PMHE8XH0=",
+        "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "2c7830806174a433e166796c1a89a87fb4d9acf2",
+        "rev": "e47f1d2527f6109ea74940f01fcfe168a00bc5f7",
         "type": "github"
       },
       "original": {
-        "owner": "stargate01",
-        "ref": "nrf-command-line-tools",
+        "owner": "nixos",
         "repo": "nixpkgs",
         "type": "github"
       }

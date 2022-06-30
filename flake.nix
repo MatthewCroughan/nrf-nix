@@ -4,7 +4,7 @@
     nixpkgs2003.url = "github:nixos/nixpkgs/nixos-20.03";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-22.05";
     nixpkgs2111.url = "github:nixos/nixpkgs/nixos-21.11";
-    stargate-nixpkgs.url = "github:stargate01/nixpkgs/nrf-command-line-tools";
+    stargate-nixpkgs.url = "github:nixos/nixpkgs";
   };
   outputs = { self, nixpkgs2111, nixpkgs2003, nixpkgs, stargate-nixpkgs }:
     let
@@ -16,6 +16,15 @@
     {
       devShells.x86_64-linux.forPaul =
         let
+          nrfConnectFull = pkgs.symlinkJoin {
+            name = "nrfconnect";
+            paths = [ stargate-pkgs.nrfconnect ];
+            buildInputs = [ pkgs.makeWrapper ];
+            postBuild = ''
+              wrapProgram $out/bin/nrfconnect \
+                --prefix PATH : ${nixpkgs.lib.makeBinPath [ myVscode ]}
+            '';
+          };
           nrfConnectExtension = pkgs.vscode-utils.extensionFromVscodeMarketplace {
             name = "nrf-connect";
             publisher = "nordic-semiconductor";
@@ -23,12 +32,12 @@
             sha256 = "sha256-so2Ir0ZbZeJBo6J285fHC6jsGBzj808bC1i8uP10QPQ=";
           };
           myVscode = pkgs.vscode-with-extensions.override {
-            vscode = pkgs.vscodium-fhs;
+            vscode = pkgs.vscode-fhsWithPackages (_: [ stargate-pkgs.nrf-command-line-tools ]);
             vscodeExtensions = [ nrfConnectExtension ];
           };
         in pkgs.mkShell
         {
-          buildInputs = [ myVscode ];
+          buildInputs = [ nrfConnectFull ];
         };
       devShell.x86_64-linux =
         let
