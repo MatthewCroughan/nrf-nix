@@ -14,6 +14,22 @@
       stargate-pkgs = import stargate-nixpkgs { system = "x86_64-linux"; config = { allowUnfree = true; segger-jlink.acceptLicense = true; }; };
     in
     {
+      devShells.x86_64-linux.forPaul =
+        let
+          nrfConnectExtension = pkgs.vscode-utils.extensionFromVscodeMarketplace {
+            name = "nrf-connect";
+            publisher = "nordic-semiconductor";
+            version = "2022.6.142";
+            sha256 = "sha256-so2Ir0ZbZeJBo6J285fHC6jsGBzj808bC1i8uP10QPQ=";
+          };
+          myVscode = pkgs.vscode-with-extensions.override {
+            vscode = pkgs.vscodium;
+            vscodeExtensions = [ nrfConnectExtension ];
+          };
+        in pkgs.mkShell
+        {
+          buildInputs = [ myVscode ];
+        };
       devShell.x86_64-linux =
         let
           zephyrPython = pkgs.python3.withPackages (p: with p; [
