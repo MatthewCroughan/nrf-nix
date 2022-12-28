@@ -2,7 +2,7 @@
   nixConfig.bash-prompt = "\\[\\033[1m\\][nrf-nix-devshell]\\[\\033\[m\\]\\040\\w$\\040";
   inputs = {
     nixpkgs2003.url = "github:nixos/nixpkgs/nixos-20.03";
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-22.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-22.11";
     nixpkgs2111.url = "github:nixos/nixpkgs/nixos-21.11";
     stargate-nixpkgs.url = "github:nixos/nixpkgs";
   };
@@ -81,6 +81,9 @@
             pkgs2111.nrfutil
             stargate-pkgs.segger-jlink
             stargate-pkgs.nrf-command-line-tools
+
+            # Unsure
+            zephyrPython
           ];
         };
     };
