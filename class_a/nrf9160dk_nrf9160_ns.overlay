@@ -1,0 +1,76 @@
+// To get started, press Ctrl+Space to bring up the completion menu and view the available nodes.
+
+// You can also use the buttons in the sidebar to perform actions on nodes.
+// Actions currently available include:
+
+// * Enabling / disabling the node
+// * Adding the bus to a bus
+// * Removing the node
+// * Connecting ADC channels
+
+// For more help, browse the DeviceTree documentation at https://docs.zephyrproject.org/latest/guides/dts/index.html
+// You can also visit the nRF DeviceTree extension documentation at https://nrfconnect.github.io/vscode-nrf-connect/devicetree/nrfdevicetree.html
+
+&pinctrl{
+    spi1_default: spi1_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 25)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 23)>,
+				<NRF_PSEL(SPIM_MISO, 0, 24)>;
+		};
+	};
+
+    spi1_sleep: spi1_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 25)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 23)>,
+				<NRF_PSEL(SPIM_MISO, 0, 24)>;
+            
+		};
+	};
+};
+
+
+&spi1 {
+    compatible = "nordic,nrf-spim";
+    status = "okay";
+    pinctrl-0 = <&spi1_default>;
+    pinctrl-1 = <&spi3_sleep>;
+        
+    pinctrl-names = "default", "sleep";
+
+    cs-gpios = < &gpio0 18 GPIO_ACTIVE_LOW >;
+    
+    miso-pull-up;
+    
+    
+    lora: sx1262@0 {
+        compatible = "semtech,sx1262";
+        reset-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+        busy-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+        dio1-gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+        
+        
+        reg = <0>;
+        spi-max-frequency = <10000000>;
+        label = "SX1262";
+    };
+    
+};
+
+
+
+/ {
+    aliases {
+        lora0 = &lora;
+    };
+};
+
+
+
+
+
+
+
+
+
