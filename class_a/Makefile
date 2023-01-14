@@ -1,6 +1,6 @@
 SDK_NRF_REVISION=v2.1-branch
 SDK_NRF_REVISION?=latest
-DOCKER_IMAGE_NAME=nrfconnect-sdk
+DOCKER_IMAGE_NAME=nordicplayground/nrfconnect-sdk
 BOARD=nrf9160dk_nrf9160_ns
 BOARD?=actinius_icarus_ns
 
