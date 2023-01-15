@@ -44,26 +44,52 @@
       kconfiglib
       pylink-square
     ]);
-    zephyrFolder = pkgs.runCommand "zephyr-folder"
+    zephyrFolder = pkgs.runCommand "zephyr-folder" {} ''
+      shopt -s dotglob
+      mkdir -p $out
+      cp -r --no-preserve=mode ${zephyrFolderUnpatched} ./foo
+      cd ./foo
+      for i in $(find ./precomputed -type f)
+      do
+        substituteInPlace $i \
+          --replace '/build/replaceMe' '${zephyrFolderUnpatched}'
+      done
+      substituteInPlace ./zephyr/cmake/modules/zephyr_module.cmake \
+        --replace '--cmake-out ''${CMAKE_BINARY_DIR}/zephyr_modules.txt' '--cmake-out /tmp/null' \
+        --replace '--settings-out ''${ZEPHYR_SETTINGS_FILE}' '--settings-out /tmp/null' \
+        --replace '--kconfig-out ''${KCONFIG_MODULES_FILE}' '--kconfig-out /tmp/null'
+
+      mv * $out
+    '';
+    zephyrFolderUnpatched = pkgs.runCommand "zephyr-folder"
       {
-        nativeBuildInputs = [ pkgs.cacert pkgs.git pkgs.python3Packages.west ];
-        outputHash = "sha256-mSCCozWpYmIOjStMAlhA5ZcelZMfSdI2QgXkD19uIn0=";
+        nativeBuildInputs = [ pkgs.cacert pkgs.git pkgs.python3Packages.west pkgs.cmake ];
+        outputHash = "sha256-cpmg0zwI5j0ueHkRu2bjuwvWReXLj+o+1qyurphhE+Q=";
         outputHashAlgo = "sha256";
         outputHashMode = "recursive";
       }
       ''
-        mkdir stuff && cd stuff
-#        west init ./.
-#        west update
+        shopt -s dotglob
+
+        mkdir -p $out/precomputed
+
+        mkdir replaceMe
+        cd replaceMe
         west init -m https://github.com/nrfconnect/sdk-nrf --mr v2.1-branch
         west update --narrow -o=--depth=1
-        git clone https://github.com/zephyrproject-rtos/hal_nordic.git
+        export ZEPHYR_BASE=$PWD/zephyr
+        ${pkgs.python3}/bin/python3 $ZEPHYR_BASE/scripts/zephyr_module.py \
+          --zephyr-base $ZEPHYR_BASE \
+          --kconfig-out $out/precomputed/Kconfig.modules \
+          --cmake-out $out/precomputed/zephyr_modules.txt \
+          --settings-out $out/precomputed/zephyr_settings.txt
+
+        cat $out/precomputed/zephyr_modules.txt
+
         for i in $(find ./ -name '*.git')
         do
           rm -rf $i
         done
-        mkdir $out
-#        shopt -s dotglob
         mv * $out
       '';
     arm-toolchain = pkgs.buildEnv {
@@ -98,88 +124,203 @@
     };
   in
   {
-    packages.x86_64-linux.exampleProject =
-      pkgs.gcc12Stdenv.mkDerivation {
-        outputHash = "";
-        outputHashAlgo = "sha256";
-        outputHashMode = "recursive";
+    fuck = zephyrFolder;
+    packages.x86_64-linux.project = pkgs.stdenv.mkDerivation {
         cmakeFlags = with pkgs; [
           "-LA"
+          "-DZEPHYR_MODULES=none"
+          "-DARM_MBEDTLS_PATH=${zephyrFolder}/mbedtls"
+#          "-DZEPHYR_MODULES_PASSTHROUGH=${self.packages.x86_64-linux.exampleProject}"
+#          "-DARM_MBEDTLS_PATH=/build/workdir/mbedtls"
           "-DCMAKE_C_COMPILER=${lib.getBin stdenv.cc}/bin/cc"
           "-DCMAKE_CXX_COMPILER=${lib.getBin stdenv.cc}/bin/c++"
           "-DUSER_CACHE_DIR=/build/.cache"
           "-DBUILD_VERSION=65a99697fa604e28cb26ec96ce935ad720222892"
-          "-DARM_MBEDTLS_PATH=${pkgs.mbedtls}"
         ];
-        preBuild = ''
-          ls -lah /build/workdir/project/build
-          ls -lah /build/workdir/project/build
-          ls -lah /build/workdir/project/build
-          ls -lah /build/workdir/project/build
-          ls -lah /build/workdir/project/build
-          ls -lah /build/workdir/project/build
-          ls -lah /build/workdir/project/build
-          ls -lah /build/workdir/project/build
-          ls -lah /build/workdir/project/build
-          ls -lah /build/workdir/project/build
-          ls -lah /build/workdir/project/build
-          ls -lah /build/workdir/project/build
-          ls -lah /build/workdir/project/build
-          cat /build/workdir/project/build/zephyr_modules.txt
-        '';
-        preConfigure = ''
-          shopt -s dotglob
-          mkdir -p /build/workdir
-          cp -r /build/class_a /build/workdir/project
-          cp -r --no-preserve=mode ${/home/matthew/tmp/tmp.KjvftECv2w}/* /build/workdir
-          cd /build/workdir/project
-          export Zephyr_DIR="$PWD/.."
-          export ZEPHYR_BASE="$PWD/../zephyr"
-          export PATH="''${ZEPHYR_BASE}/scripts:''${PATH}"
-          west list
-          cp -r --no-preserve=mode ${sdkPatched} /build/workdir/zephyr-sdk
-          ls -lah /build/workdir
-          west build
-        '';
-        name = "foo";
+        name = "project";
         src = ./.;
         LC_ALL = "C.UTF-8";
         LANG = "C.UTF-8";
+        ZEPHYR_DIR = zephyrFolder;
+        ZEPHYR_BASE = zephyrFolder + "/zephyr";
+        preConfigure = ''
+          export ZEPHYR_BASE="${zephyrFolder}/zephyr"
+
+          ls -lah ${zephyrFolder}
+
+          mkdir -p build/Kconfig
+          cp -v --no-preserve=mode ${zephyrFolder}/precomputed/zephyr_modules.txt ./build
+          cp -v --no-preserve=mode ${zephyrFolder}/precomputed/zephyr_settings.txt ./build
+          cp -r -v --no-preserve=mode ${zephyrFolder}/precomputed/Kconfig.modules ./build/Kconfig
+        '';
+        installPhase = ''
+          mkdir -p $out
+          for i in $(find ./zephyr \( -name "*.hex" -o -name "*.bin" -o -name ".elf" \))
+          do
+            cp --parents $i $out
+          done
+        '';
         nativeBuildInputs = with pkgs; [
           dtc
           cmake ninja
           git
           cacert
-          python3Packages.west
-#          pkgsCross.arm-embedded.buildPackages.binutils
-#          gcc-arm-embedded
-#          stdenv.cc.cc.lib
           zephyrPython
-        ];
-        buildInputs = with pkgs; [
-          # Undocumented Deps
-#          file
-#          git
-
-          # Suggested
-#          cmake
-#          gn
-
-          # Minimal
-#          nrfutil
-#          segger-jlink
-#          nrf-command-line-tools
-
-          # Unsure
         ];
         BOARD = "nrf9160dk_nrf9160_ns";
         XDG_CACHE_HOME = "/build/.cache";
-#        LIBGCC_FILE_NAME = pkgs.stdenv.cc.cc.lib;
         ZEPHYR_TOOLCHAIN_VARIANT = "zephyr";
 #        ZEPHYR_TOOLCHAIN_VARIANT = "gnuarmemb";
 #        GNUARMEMB_TOOLCHAIN_PATH = arm-toolchain;
         ZEPHYR_SDK_INSTALL_DIR = sdkPatched;
-      };
+    };
+#    packages.x86_64-linux.newAttempt =
+#      pkgs.gcc12Stdenv.mkDerivation {
+#        cmakeFlags = with pkgs; [
+#          "-LA"
+#          "-DZEPHYR_MODULES_PASSTHROUGH=${self.packages.x86_64-linux.exampleProject}"
+#          "-DARM_MBEDTLS_PATH=/build/workdir/mbedtls"
+#          "-DCMAKE_C_COMPILER=${lib.getBin stdenv.cc}/bin/cc"
+#          "-DCMAKE_CXX_COMPILER=${lib.getBin stdenv.cc}/bin/c++"
+#          "-DUSER_CACHE_DIR=/build/.cache"
+#          "-DBUILD_VERSION=65a99697fa604e28cb26ec96ce935ad720222892"
+#        ];
+#        preConfigure = ''
+#          shopt -s dotglob
+#          mkdir -p /build/workdir
+#          cp -r /build/class_a /build/workdir/project
+#          cp -r --no-preserve=mode ${/home/matthew/tmp/tmp.KjvftECv2w}/* /build/workdir
+#          cd /build/workdir/project
+#          export Zephyr_DIR="$PWD/.."
+#          export ZEPHYR_BASE="$PWD/../zephyr"
+#          export PATH="''${ZEPHYR_BASE}/scripts:''${PATH}"
+#          cp -r --no-preserve=mode ${sdkPatched} /build/workdir/zephyr-sdk
+#
+#          mkdir -p /build/workdir/project/build
+#          cp -r --no-preserve=mode ${self.packages.x86_64-linux.exampleProject}/* /build/workdir/project/build
+#        '';
+#        preBuild = ''
+#        '';
+#        name = "newAttempt";
+#        src = ./.;
+#        LC_ALL = "C.UTF-8";
+#        LANG = "C.UTF-8";
+#        nativeBuildInputs = with pkgs; [
+#          dtc
+#          cmake ninja
+#          git
+#          cacert
+##          pkgsCross.arm-embedded.buildPackages.binutils
+##          gcc-arm-embedded
+##          stdenv.cc.cc.lib
+#          zephyrPython
+#        ];
+#        BOARD = "nrf9160dk_nrf9160_ns";
+#        XDG_CACHE_HOME = "/build/.cache";
+##        LIBGCC_FILE_NAME = pkgs.stdenv.cc.cc.lib;
+#        ZEPHYR_TOOLCHAIN_VARIANT = "zephyr";
+##        ZEPHYR_TOOLCHAIN_VARIANT = "gnuarmemb";
+##        GNUARMEMB_TOOLCHAIN_PATH = arm-toolchain;
+#        ZEPHYR_SDK_INSTALL_DIR = sdkPatched;
+#      };
+#    packages.x86_64-linux.exampleProject =
+#      pkgs.gcc12Stdenv.mkDerivation {
+##        outputHash = "";
+##        outputHashAlgo = "sha256";
+##        outputHashMode = "recursive";
+#        cmakeFlags = with pkgs; [
+#          "-LA"
+#          "-DCMAKE_C_COMPILER=${lib.getBin stdenv.cc}/bin/cc"
+#          "-DCMAKE_CXX_COMPILER=${lib.getBin stdenv.cc}/bin/c++"
+#          "-DUSER_CACHE_DIR=/build/.cache"
+#          "-DBUILD_VERSION=65a99697fa604e28cb26ec96ce935ad720222892"
+#        ];
+#        preBuild = ''
+#          cat /build/workdir/project/build/zephyr_modules.txt
+#        '';
+#        preConfigure = ''
+#          shopt -s dotglob
+#          mkdir -p /build/workdir
+#          cp -r /build/class_a /build/workdir/project
+#          cp -r --no-preserve=mode ${/home/matthew/tmp/tmp.KjvftECv2w}/* /build/workdir
+#          cd /build/workdir/project
+#          export Zephyr_DIR="$PWD/.."
+#          export ZEPHYR_BASE="$PWD/../zephyr"
+#          export PATH="''${ZEPHYR_BASE}/scripts:''${PATH}"
+#          west list
+#          cp -r --no-preserve=mode ${sdkPatched} /build/workdir/zephyr-sdk
+#
+#          mkdir foo
+#          cd foo
+#
+#          ${pkgs.python3}/bin/python3 $ZEPHYR_BASE/scripts/zephyr_module.py \
+#            --zephyr-base $ZEPHYR_BASE \
+#            --kconfig-out ./Kconfig.modules \
+#            --cmake-out ./zephyr_modules.txt \
+#            --settings-out ./zephyr_settings.txt
+#
+#          ls -lah
+#          ls -lah
+#          ls -lah
+#          ls -lah
+#          ls -lah
+#          ls -lah
+#          ls -lah
+#          ls -lah
+#
+#          cd -
+#        '';
+#        installPhase = ''
+#          ls -lah
+#          mkdir -p $out/Kconfig
+#          cp /build/workdir/project/build/zephyr_modules.txt $out
+#          cp /build/workdir/project/build/zephyr_settings.txt $out
+#          cp /build/workdir/project/build/Kconfig/Kconfig.modules $out/Kconfig/Kconfig.modules
+#        '';
+#        name = "foo";
+#        src = builtins.filterSource (path: type:
+#          !(builtins.elem (baseNameOf path) [
+#            "flake.nix"
+#            "flake.lock"
+#          ]))
+#        ./.;
+#        LC_ALL = "C.UTF-8";
+#        LANG = "C.UTF-8";
+#        nativeBuildInputs = with pkgs; [
+#          dtc
+#          cmake ninja
+#          git
+#          cacert
+#          python3Packages.west
+##          pkgsCross.arm-embedded.buildPackages.binutils
+##          gcc-arm-embedded
+##          stdenv.cc.cc.lib
+#          zephyrPython
+#        ];
+#        buildInputs = with pkgs; [
+#          # Undocumented Deps
+##          file
+##          git
+#
+#          # Suggested
+##          cmake
+##          gn
+#
+#          # Minimal
+##          nrfutil
+##          segger-jlink
+##          nrf-command-line-tools
+#
+#          # Unsure
+#        ];
+#        BOARD = "nrf9160dk_nrf9160_ns";
+#        XDG_CACHE_HOME = "/build/.cache";
+##        LIBGCC_FILE_NAME = pkgs.stdenv.cc.cc.lib;
+#        ZEPHYR_TOOLCHAIN_VARIANT = "zephyr";
+##        ZEPHYR_TOOLCHAIN_VARIANT = "gnuarmemb";
+##        GNUARMEMB_TOOLCHAIN_PATH = arm-toolchain;
+#        ZEPHYR_SDK_INSTALL_DIR = sdkPatched;
+#      };
 #    packages.x86_64-linux.exampleProject =
 #      pkgs.gcc12Stdenv.mkDerivation {
 #        cmakeFlags = with pkgs; [
