@@ -154,10 +154,15 @@
           cp -r -v --no-preserve=mode ${zephyrFolder}/precomputed/Kconfig.modules ./build/Kconfig
         '';
         installPhase = ''
-          mkdir -p $out
-          for i in $(find ./zephyr \( -name "*.hex" -o -name "*.bin" -o -name ".elf" \))
+          for i in $(find . -name "*.hex")
           do
-            cp --parents $i $out
+            mkdir -p $out/hex
+            cp -vu $i $out/hex
+          done
+          for i in $(find . -name "*.bin")
+          do
+            mkdir -p $out/bin
+            cp -vu $i $out/bin
           done
         '';
         nativeBuildInputs = with pkgs; [
