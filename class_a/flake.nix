@@ -44,7 +44,7 @@
       kconfiglib
       pylink-square
     ]);
-    zephyrFolder = pkgs.runCommand "zephyr-folder" {} ''
+    zephyrFolder = pkgs.runCommand "zephyr-folder" { nativeBuildInputs = [ pkgs.git ]; } ''
       shopt -s dotglob
       mkdir -p $out
       cp -r --no-preserve=mode ${zephyrFolderUnpatched} ./foo
@@ -54,10 +54,21 @@
         substituteInPlace $i \
           --replace '/build/replaceMe' '${zephyrFolderUnpatched}'
       done
-      substituteInPlace ./zephyr/cmake/modules/zephyr_module.cmake \
-        --replace '--cmake-out ''${CMAKE_BINARY_DIR}/zephyr_modules.txt' '--cmake-out /tmp/null' \
-        --replace '--settings-out ''${ZEPHYR_SETTINGS_FILE}' '--settings-out /tmp/null' \
-        --replace '--kconfig-out ''${KCONFIG_MODULES_FILE}' '--kconfig-out /tmp/null'
+#      substituteInPlace ./zephyr/cmake/modules/zephyr_module.cmake \
+#        --replace '--cmake-out ''${CMAKE_BINARY_DIR}/zephyr_modules.txt' '--cmake-out /tmp/null' \
+#        --replace '--settings-out ''${ZEPHYR_SETTINGS_FILE}' '--settings-out /tmp/null' \
+#        --replace '--kconfig-out ''${KCONFIG_MODULES_FILE}' '--kconfig-out /tmp/null'
+
+      git -C zephyr init
+      git -C zephyr config user.email 'foo@example.com'
+      git -C zephyr config user.name 'Foo Bar'
+      git -C zephyr add -A
+      git -C zephyr commit -m 'Fake commit'
+      git -C zephyr checkout -b manifest-rev
+      git -C zephyr checkout --detach manifest-rev
+
+      # 2 checkouts because Git is not atomic?
+      git -C zephyr checkout --detach manifest-rev
 
       mv * $out
     '';
@@ -128,7 +139,6 @@
     packages.x86_64-linux.project = pkgs.stdenv.mkDerivation {
         cmakeFlags = with pkgs; [
           "-LA"
-          "-DZEPHYR_MODULES=none"
           "-DARM_MBEDTLS_PATH=${zephyrFolder}/mbedtls"
 #          "-DZEPHYR_MODULES_PASSTHROUGH=${self.packages.x86_64-linux.exampleProject}"
 #          "-DARM_MBEDTLS_PATH=/build/workdir/mbedtls"
@@ -144,14 +154,16 @@
         ZEPHYR_DIR = zephyrFolder;
         ZEPHYR_BASE = zephyrFolder + "/zephyr";
         preConfigure = ''
-          export ZEPHYR_BASE="${zephyrFolder}/zephyr"
+          cp -r --no-preserve=mode ${zephyrFolder} ./foo
+          export ZEPHYR_BASE="./foo/zephyr"
+          export ZEPHYR_DIR="./foo"
 
           ls -lah ${zephyrFolder}
 
           mkdir -p build/Kconfig
-          cp -v --no-preserve=mode ${zephyrFolder}/precomputed/zephyr_modules.txt ./build
-          cp -v --no-preserve=mode ${zephyrFolder}/precomputed/zephyr_settings.txt ./build
-          cp -r -v --no-preserve=mode ${zephyrFolder}/precomputed/Kconfig.modules ./build/Kconfig
+#          cp -v --no-preserve=mode ${zephyrFolder}/precomputed/zephyr_modules.txt ./build
+#          cp -v --no-preserve=mode ${zephyrFolder}/precomputed/zephyr_settings.txt ./build
+#          cp -r -v --no-preserve=mode ${zephyrFolder}/precomputed/Kconfig.modules ./build/Kconfig
         '';
         installPhase = ''
           for i in $(find . -name "*.hex")
@@ -171,6 +183,7 @@
           git
           cacert
           zephyrPython
+          python3Packages.west
         ];
         BOARD = "nrf9160dk_nrf9160_ns";
         XDG_CACHE_HOME = "/build/.cache";
