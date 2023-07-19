@@ -64,7 +64,7 @@
 #        export GNUARMEMB_TOOLCHAIN_PATH=${pkgs.gcc-arm-embedded-11}
         export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
         export ZEPHYR_SDK_INSTALL_DIR=${sdkPatched};
-        export PATH=${sdkPatched}/bin:$PATH
+        export PATH=${sdkPatched}/arm-zephyr-eabi/bin:$PATH
         export PYTHONPATH=${zephyrPython}/lib/python3.10/site-packages
       '';
       buildInputs = with pkgs; [
