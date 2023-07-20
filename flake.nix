@@ -158,7 +158,7 @@
           version = "2023.6.6";
           sha256 = "sha256-pq+O2Nctd4Op8pW6lLXI1J1QBYtUeo0thczfnSe+8CA=";
         }];
-        vscodeFhs = (vscode-fhsWithPackages (p: with p; [
+        vscodeFhs = (pkgs.vscode-fhsWithPackages (p: with p; [
           nrf-command-line-tools
           git
           dtc
