@@ -158,7 +158,7 @@
           version = "2023.6.6";
           sha256 = "sha256-pq+O2Nctd4Op8pW6lLXI1J1QBYtUeo0thczfnSe+8CA=";
         }];
-        vscode = (vscode-fhsWithPackages (p: with p; [
+        vscodeFhs = (vscode-fhsWithPackages (p: with p; [
           nrf-command-line-tools
           git
           dtc
@@ -169,10 +169,11 @@
           zephyrPython
         ]));
         myVscode = vscode-with-extensions.override {
+          vscode = vscodeFhs;
           vscodeExtensions = nordic-pack;
         };
       in [
-        nordic-pack
+        myVscode
         nrfconnect
           nrf-command-line-tools
           git
