@@ -50,6 +50,89 @@
     ]);
   in
   {
+    #TODO: Clone ZEPHYR_BASE via a fixed-output-derivation and provide it as a flake input
+    #TODO: Make a wrapper function like mkZephyrProject that builds generically, taking a few arguments
+    packages.x86_64-linux.example-application = let
+      west-workspace = pkgs.runCommand "west-workspace"
+        {
+          nativeBuildInputs = [ pkgs.cacert pkgs.git pkgs.python3Packages.west ];
+          outputHash = "sha256-cTCBTd/ZPPQDrDI1Re8RKreUBTAHrF2J5MwGUxhsz1E=";
+          outputHashAlgo = "sha256";
+          outputHashMode = "recursive";
+        }
+        ''
+          export SOURCE_DATE_EPOCH="315532800"
+          mkdir -p $out
+          shopt -s dotglob
+          west init -m https://github.com/zephyrproject-rtos/example-application --mr main $out
+          cd $out
+          west update --narrow -o=--depth=1
+          for i in $(find $out -name '.git')
+          do
+            rm -rf $i
+            echo removing $i for purity!
+            echo -e "$(basename $(dirname "$i"))" >> fakeTheseRepos
+          done
+          sort -o fakeTheseRepos fakeTheseRepos
+        '';
+
+    in pkgs.stdenv.mkDerivation {
+      name = "example-application";
+      src = west-workspace;
+      #src = pkgs.fetchFromGitHub {
+      #  owner = "zephyrproject-rtos";
+      #  repo = "example-application";
+      #  rev = "2c85d9224fca21fe6e370895c089a6642a9505ea";
+      #  sha256 = "";
+      #};
+      nativeBuildInputs = with pkgs; [
+        git
+        zephyrPython
+          nrf-command-line-tools
+          dtc
+          gn
+          gperf
+          ninja
+          cmake
+      ];
+      configurePhase = ''
+        export HOME=$TMP
+        # Git is not atomic by default due to auto-gc
+        # https://stackoverflow.com/questions/28092485/how-to-prevent-garbage-collection-in-git
+        git config --global gc.autodetach false
+
+        # The west commands needs to find .git
+        # Remote all .git files and replace with BS
+        # Each of these is done in parallel with & and wait
+        while read -r i
+        do
+          (
+            echo creating git repo in "$i"
+            git -C "$i" init
+            git -C "$i" config user.email 'foo@example.com'
+            git -C "$i" config user.name 'Foo Bar'
+            git -C "$i" add -A
+            git -C "$i" commit -m 'Fake commit'
+            git -C "$i" checkout -b manifest-rev
+            git -C "$i" checkout --detach manifest-rev
+          ) &
+        done < fakeTheseRepos
+        wait
+      '';
+      buildPhase = ''
+        export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+        export ZEPHYR_SDK_INSTALL_DIR=${sdkPatched}
+
+        # cd into build directory, otherwise it fucks up
+        # https://github.com/zephyrproject-rtos/example-application/pull/40
+        cd example-application/app
+
+        west build -b custom_plank
+      '';
+      installPhase = ''
+        ls -lah
+      '';
+    };
     apps.x86_64-linux.sdkGL = {
       type = "app";
       program = builtins.toPath (pkgs.writeShellScript "sdkGL" ''
@@ -65,18 +148,18 @@
         export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
         export ZEPHYR_SDK_INSTALL_DIR=${sdkPatched};
         export PATH=${sdkPatched}/arm-zephyr-eabi/bin:$PATH
-        export PYTHONPATH=${zephyrPython}/lib/python3.10/site-packages
+        export PYTHONPATH=${zephyrPython}/lib/python3.10/site-packages:$PYTHONPATH
       '';
-      buildInputs = with pkgs; [
-        nrfconnect
-        (vscode-fhsWithPackages (p: with p; [
+      buildInputs = with pkgs; 
+      let
+        nordic-pack = pkgs.vscode-utils.extensionsFromVscodeMarketplace [{
+          name = "nrf-connect-extension-pack";
+          publisher = "nordic-semiconductor";
+          version = "2023.6.6";
+          sha256 = "sha256-pq+O2Nctd4Op8pW6lLXI1J1QBYtUeo0thczfnSe+8CA=";
+        }];
+        vscode = (vscode-fhsWithPackages (p: with p; [
           nrf-command-line-tools
-          #(nrf-command-line-tools.overrideAttrs (_: {
-          #  src = fetchurl {
-          #    url = "https://nsscprodmedia.blob.core.windows.net/prod/software-and-other-downloads/desktop-software/nrf-command-line-tools/sw/versions-10-x-x/10-21-0/nrf-command-line-tools-10.21.0_linux-amd64.tar.gz";
-          #    sha256 = "sha256-yjJWB2uhB0QmysZ1/YoU6VxNJC/Mr8b8yLNqQnfLkkk=";
-          #  };
-          #}))
           git
           dtc
           gn
@@ -84,7 +167,21 @@
           ninja
           cmake
           zephyrPython
-        ]))
+        ]));
+        myVscode = vscode-with-extensions.override {
+          vscodeExtensions = nordic-pack;
+        };
+      in [
+        nordic-pack
+        nrfconnect
+          nrf-command-line-tools
+          git
+          dtc
+          gn
+          gperf
+          ninja
+          cmake
+          zephyrPython
       ];
     };
   };
