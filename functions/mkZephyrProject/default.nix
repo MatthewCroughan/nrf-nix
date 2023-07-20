@@ -6,6 +6,8 @@
 , cmake
 , zephyr-sdk
 , python3
+, nrf-command-line-tools
+, git
 }:
 
 { name
@@ -16,6 +18,9 @@
 , ...
 }@args:
 let
+  # It's not entirely clear based on the documentation which of all of these
+  # dependencies are actually necessary to build Zephyr, the list may increase
+  # depending on the ongoing changes upstream
   zephyrPython = python3.withPackages (p: with p; [
      docutils
      wheel
@@ -48,20 +53,27 @@ stdenv.mkDerivation (args // {
   inherit src name;
   nativeBuildInputs = [
     zephyrPython
-    gperf
-    gn
+    git
+    # Not clear if gperf/gn may be needed at some stage
+    # gperf
+    # gn
     dtc
     ninja
     cmake
   ];
-  configurePhase = "true";
+  dontConfigure = "true";
   buildPhase = ''
     export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
     export ZEPHYR_SDK_INSTALL_DIR=${zephyr-sdk}
-    export ZEPHYR_BASE=${westWorkspace}
 
-    west build -b ${board} ${app} --build-dir $out
+    cp -r --no-preserve=mode ${westWorkspace} ./tmp
+    cp -r --no-preserve=mode ${src} ./tmp/project
+    cd tmp
+
+    west -vvv build -b ${board} project/${app}
   '';
+  # It may be a good idea to take an argument like `filesToInstall = []` which
+  # would select files from the build result to move to $out
   installPhase = ''
     mkdir $out
     mv -v build/zephyr/{merged.hex,app_update.bin} $out
