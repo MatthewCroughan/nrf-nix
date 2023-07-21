@@ -43,7 +43,9 @@ stdenv.mkDerivation (args // {
     cp -r --no-preserve=mode ${src} ./tmp/project
     cd tmp
 
-    west -vvv build -b ${board} project/${app}
+    cd project/${app}
+
+    west -vvv build -b ${board}
     runHook postBuild
   '';
   # It may be a good idea to take an argument like `filesToInstall = []` which
