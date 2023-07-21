@@ -35,6 +35,7 @@ stdenv.mkDerivation (args // {
   ];
   dontConfigure = "true";
   buildPhase = ''
+    runHook preBuild
     export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
     export ZEPHYR_SDK_INSTALL_DIR=${zephyr-sdk}
 
@@ -43,11 +44,14 @@ stdenv.mkDerivation (args // {
     cd tmp
 
     west -vvv build -b ${board} project/${app}
+    runHook postBuild
   '';
   # It may be a good idea to take an argument like `filesToInstall = []` which
   # would select files from the build result to move to $out
   installPhase = ''
+    runHook preInstall
     mkdir $out
     mv -v build/zephyr/{merged.hex,app_update.bin} $out
+    runHook postInstall
   '';
 })
