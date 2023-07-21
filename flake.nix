@@ -34,6 +34,116 @@
               cp -r $src $out
             '';
           };
+          # It's not entirely clear based on the documentation which of all of these
+          # dependencies are actually necessary to build Zephyr, the list may increase
+          # depending on the ongoing changes upstream
+          zephyrPython = pkgs.python3.withPackages (p: with p; [
+            docutils
+            wheel
+            breathe
+            sphinx
+            sphinx_rtd_theme
+            ply
+            pyelftools
+            pyserial
+            pykwalify
+            colorama
+            pillow
+            intelhex
+            pytest
+            gcovr
+            tkinter
+            future
+            cryptography
+            setuptools
+            pyparsing
+            click
+            kconfiglib
+            pylink-square
+            pyyaml
+            cbor2
+            west
+          ]);
+        };
+        devShells.default = pkgs.mkShell {
+          shellHook = ''
+#            export GNUARMEMB_TOOLCHAIN_PATH=${pkgs.gcc-arm-embedded-11}
+            export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+            export ZEPHYR_SDK_INSTALL_DIR=${pkgs.zephyr-sdk};
+            export PATH=${pkgs.zephyr-sdk}/arm-zephyr-eabi/bin:$PATH
+            export PYTHONPATH=${pkgs.zephyrPython}/lib/python3.10/site-packages:$PYTHONPATH
+          '';
+          buildInputs = with pkgs;
+          let
+            otherExtensions = pkgs.vscode-utils.extensionsFromVscodeMarketplace [
+              {
+                name = "nrf-connect-extension-pack";
+                publisher = "nordic-semiconductor";
+                version = "2023.6.6";
+                sha256 = "sha256-pq+O2Nctd4Op8pW6lLXI1J1QBYtUeo0thczfnSe+8CA=";
+              }
+              {
+                name = "nrf-terminal";
+                publisher = "nordic-semiconductor";
+                version = "2023.6.78";
+                sha256 = "sha256-vJtlarLrlzcGmnXr+mqEeL3L7dKskuFXE9/mgS/1dN0=";
+              }
+              {
+                name = "nrf-kconfig";
+                publisher = "nordic-semiconductor";
+                version = "2023.6.51";
+                sha256 = "sha256-Bx68ANr/efOVTAqf1JXi8ZMnzHCKwf+pHE+YD710LUE=";
+              }
+              {
+                name = "nrf-devicetree";
+                publisher = "nordic-semiconductor";
+                version = "2023.6.108";
+                sha256 = "sha256-V+jloKRu9komxzRdEIjTIcduwpD9fimXwTAgrZWzeiM=";
+              }
+              {
+                name = "nrf-connect";
+                publisher = "nordic-semiconductor";
+                version = "2023.6.345";
+                sha256 = "sha256-6bH/yjARqP2FJa1GnjV0gQ8fRSwMyvno+OggnDGy2Nw=";
+              }
+              {
+                name = "gnu-mapfiles";
+                publisher = "trond-snekvik";
+                version = "1.1.0";
+                sha256 = "sha256-JHdOqCjHbxHlth2PQ6r7SfNqedKwu6Fsot/mhPPFJhA=";
+              }
+          ];
+            vscodeFhs = (pkgs.vscode-fhsWithPackages (p: with p; [
+              nrf-command-line-tools
+              segger-jlink
+              git
+              dtc
+              gn
+              gperf
+              ninja
+              cmake
+              zephyrPython
+            ]));
+            myVscode = vscode-with-extensions.override {
+              vscode = vscodeFhs;
+              # https://marketplace.visualstudio.com/items?itemName=nordic-semiconductor.nrf-connect-extension-pack
+              vscodeExtensions = with pkgs.vscode-extensions; [
+                ms-vscode.cpptools
+                twxs.cmake
+              ] ++ otherExtensions;
+            };
+          in [
+            myVscode
+            nrfconnect
+              nrf-command-line-tools
+              git
+              dtc
+              gn
+              gperf
+              ninja
+              cmake
+              zephyrPython
+          ];
         };
       };
       flake = {
