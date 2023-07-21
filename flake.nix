@@ -103,8 +103,8 @@
               {
                 name = "nrf-connect";
                 publisher = "nordic-semiconductor";
-                version = "2023.6.345";
-                sha256 = "sha256-6bH/yjARqP2FJa1GnjV0gQ8fRSwMyvno+OggnDGy2Nw=";
+                version = "2022.7.111";
+                sha256 = "sha256-td97z4H5/G8Xgy66kY0N5z/eqWf15S0BL0FtvquYgUE=";
               }
               {
                 name = "gnu-mapfiles";
