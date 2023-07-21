@@ -12,6 +12,7 @@
 , python3
 , nrf-command-line-tools
 , git
+, lib
 }:
 
 { name
@@ -19,10 +20,12 @@
 , board
 , app
 , westWorkspace
+, filesToInstall ? [ "merged.hex" "app_update.bin" ]
 , ...
 }@args:
 stdenv.mkDerivation (args // {
-  inherit src name;
+  inherit name;
+  src = null;
   nativeBuildInputs = [
     zephyrPython
     git
@@ -33,19 +36,27 @@ stdenv.mkDerivation (args // {
     ninja
     cmake
   ];
-  dontConfigure = "true";
+  phases = [
+    "unpackPhase"
+    "buildPhase"
+    "installPhase"
+    "patchPhase"
+    "fixupPhase"
+  ];
+  unpackPhase = ''
+    cp -r --no-preserve=mode ${westWorkspace} ./source
+    cp -r --no-preserve=mode ${src} ./source/project
+    cd source
+    runHook postUnpack
+  '';
   buildPhase = ''
     runHook preBuild
     export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
     export ZEPHYR_SDK_INSTALL_DIR=${zephyr-sdk}
 
-    cp -r --no-preserve=mode ${westWorkspace} ./tmp
-    cp -r --no-preserve=mode ${src} ./tmp/project
-    cd tmp
+    cd project
 
-    cd project/${app}
-
-    west -vvv build -b ${board}
+    west -vvv build -b ${board} ${app}
     runHook postBuild
   '';
   # It may be a good idea to take an argument like `filesToInstall = []` which
@@ -53,7 +64,7 @@ stdenv.mkDerivation (args // {
   installPhase = ''
     runHook preInstall
     mkdir $out
-    mv -v build/zephyr/{merged.hex,app_update.bin} $out
+    mv -v build/zephyr/{${lib.concatStringsSep "," filesToInstall}} $out
     runHook postInstall
   '';
 })
