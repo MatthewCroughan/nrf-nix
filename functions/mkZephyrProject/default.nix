@@ -68,12 +68,25 @@ stdenv.mkDerivation (args // {
     west ${verbosityFlags} build -b ${board} ${app}
     runHook postBuild
   '';
-  # It may be a good idea to take an argument like `filesToInstall = []` which
-  # would select files from the build result to move to $out
   installPhase = ''
+    function installFailure {
+      echo
+      echo "------"
+      echo "set the filesToInstall argument of mkZephyrProject to a list of files to extract from the build directory"
+      echo "above are some of the files produced by this build"
+      echo 'an example might be filesToInstall = [ "merged.hex" "app_update.bin" ]'
+      echo "------"
+      echo
+      exit 1
+    }
     runHook preInstall
     mkdir $out
-    mv -v build/zephyr/{${lib.concatStringsSep "," filesToInstall}} $out
+
+    echo ----
+    ls -lah build/zephyr
+    echo ----
+
+    ( cd build/zephyr && cp -r -v ${lib.concatStringsSep " " filesToInstall} $out ) || installFailure
     runHook postInstall
   '';
 })
