@@ -20,6 +20,7 @@
 , board
 , app
 , westWorkspace
+, westVerbosity ? 0
 , filesToInstall ? [ "merged.hex" "app_update.bin" ]
 , ...
 }@args:
@@ -49,14 +50,22 @@ stdenv.mkDerivation (args // {
     cd source
     runHook postUnpack
   '';
-  buildPhase = ''
+
+  buildPhase = let
+    generateVerbosityFlags = v:
+  if v > 0 then
+    "-" + (lib.concatStrings (lib.replicate v "v"))
+  else
+    "";
+    verbosityFlags = generateVerbosityFlags westVerbosity;
+  in ''
     runHook preBuild
     export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
     export ZEPHYR_SDK_INSTALL_DIR=${zephyr-sdk}
 
     cd project
 
-    west -vvv build -b ${board} ${app}
+    west ${verbosityFlags} build -b ${board} ${app}
     runHook postBuild
   '';
   # It may be a good idea to take an argument like `filesToInstall = []` which
