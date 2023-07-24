@@ -66,11 +66,23 @@
             ecdsa
           ]);
         };
-        devShells.default = pkgs.mkShell {
-          shellHook = ''
+        devShells.default =
+          let
+            westWorkspace = pkgs.fetchWestWorkspace {
+              url = "https://github.com/nrfconnect/sdk-nrf";
+              rev = "v2.1.0";
+              sha256 = "sha256-LoL0SzPiKfXxWnZdbx+3m0bzyPeHovWNlmkFQsmiR7g=";
+            };
+          in pkgs.mkShell {
+            shellHook = ''
 #            export GNUARMEMB_TOOLCHAIN_PATH=${pkgs.gcc-arm-embedded-11}
+
+            rm -rf /tmp/nrf-nix
+            cp -r --no-preserve=mode ${westWorkspace} /tmp/nrf-nix
+
             export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
             export ZEPHYR_SDK_INSTALL_DIR=${pkgs.zephyr-sdk};
+            export ZEPHYR_BASE="/tmp/nrf-nix/zephyr"
             export PATH=${pkgs.zephyr-sdk}/arm-zephyr-eabi/bin:$PATH
             export PYTHONPATH=${pkgs.zephyrPython}/lib/python3.10/site-packages:$PYTHONPATH
           '';
@@ -117,7 +129,6 @@
             vscodeFhs = (pkgs.vscode-fhsWithPackages (p: with p; [
               nrf-command-line-tools
               segger-jlink
-              git
               dtc
               gn
               gperf
@@ -137,7 +148,6 @@
             myVscode
             nrfconnect
               nrf-command-line-tools
-              git
               dtc
               gn
               gperf
