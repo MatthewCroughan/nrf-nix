@@ -64,6 +64,7 @@
             cbor2
             west
             ecdsa
+            anytree
           ]);
         };
         devShells.default =
