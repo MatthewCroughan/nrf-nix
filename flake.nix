@@ -63,6 +63,7 @@
             pyyaml
             cbor2
             west
+            ecdsa
           ]);
         };
         devShells.default = pkgs.mkShell {
