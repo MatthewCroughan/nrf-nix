@@ -21,7 +21,7 @@
 , app
 , westWorkspace
 , westVerbosity ? 0
-, filesToInstall ? [ "merged.hex" "app_update.bin" ]
+, filesToInstall ? [ "merged.hex" "app_update.bin" "zephyr.hex" ] # https://developer.nordicsemi.com/nRF_Connect_SDK/doc/2.1.0/nrf/app_build_system.html#output-build-files
 , cmakeFlags ? []
 , ...
 }@args:
@@ -74,9 +74,14 @@ stdenv.mkDerivation (args // {
     function installFailure {
       echo
       echo "------"
-      echo "set the filesToInstall argument of mkZephyrProject to a list of files to extract from the build directory"
+      echo "set the filesToInstall argument of mkZephyrProject"
+      echo "to a list of files to extract from the build directory"
       echo "above are some of the files produced by this build"
+      echo
+      echo "https://developer.nordicsemi.com/nRF_Connect_SDK/doc/2.1.0/nrf/app_build_system.html#output-build-files"
+      echo
       echo 'an example might be filesToInstall = [ "merged.hex" "app_update.bin" ]'
+      echo
       echo "------"
       echo
       exit 1
@@ -84,9 +89,9 @@ stdenv.mkDerivation (args // {
     runHook preInstall
     mkdir $out
 
-    echo ----
+    echo ------
     ls -lah build/zephyr
-    echo ----
+    echo ------
 
     ( cd build/zephyr && cp -r -v ${lib.concatStringsSep " " filesToInstall} $out ) || installFailure
     runHook postInstall
