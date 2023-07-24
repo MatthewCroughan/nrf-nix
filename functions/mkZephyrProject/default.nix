@@ -22,10 +22,12 @@
 , westWorkspace
 , westVerbosity ? 0
 , filesToInstall ? [ "merged.hex" "app_update.bin" ]
+, cmakeFlags ? []
 , ...
 }@args:
 stdenv.mkDerivation (args // {
   inherit name;
+  inherit cmakeFlags;
   src = null;
   nativeBuildInputs = [
     zephyrPython
@@ -65,7 +67,7 @@ stdenv.mkDerivation (args // {
 
     cd project
 
-    west ${verbosityFlags} build -b ${board} ${app}
+    west ${verbosityFlags} build -b ${board} ${app} ${lib.optionalString (cmakeFlags != []) "-- ${toString cmakeFlags}"}
     runHook postBuild
   '';
   installPhase = ''
