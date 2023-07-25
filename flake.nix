@@ -76,8 +76,9 @@
             };
           in pkgs.mkShell {
             shellHook = ''
-#            export GNUARMEMB_TOOLCHAIN_PATH=${pkgs.gcc-arm-embedded-11}
+#            export GNUARMEMB_TOOLCHAIN_PATH=$#{pkgs.gcc-arm-embedded-11}
 
+            echo "Creating mutable west workspace in /tmp/nrf-nix and forcing VSCode to use it"
             rm -rf /tmp/nrf-nix
             cp -r --no-preserve=mode ${westWorkspace} /tmp/nrf-nix
 
