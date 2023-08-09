@@ -29,7 +29,7 @@ stdenv.mkDerivation (args // {
   inherit name;
   inherit cmakeFlags;
   src = null;
-  nativeBuildInputs = [
+  nativeBuildInputs = (args.nativeBuildInputs or []) ++ [
     zephyrPython
     git
     # Not clear if gperf/gn may be needed at some stage
@@ -61,9 +61,9 @@ stdenv.mkDerivation (args // {
     "";
     verbosityFlags = generateVerbosityFlags westVerbosity;
   in ''
-    runHook preBuild
     export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
     export ZEPHYR_SDK_INSTALL_DIR=${zephyr-sdk}
+    runHook preBuild
 
     cd project
 
